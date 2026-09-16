@@ -2,80 +2,133 @@
 
 namespace app\controllers;
 
-use Yii;
+use app\models\Pelabuhan;
+use app\models\PelabuhanSearch;
 use yii\web\Controller;
-use yii\data\ArrayDataProvider;
-use GuzzleHttp\Client;
+use yii\web\NotFoundHttpException;
+use yii\filters\VerbFilter;
 
+/**
+ * PelabuhanController implements the CRUD actions for Pelabuhan model.
+ */
 class PelabuhanController extends Controller
 {
+    /**
+     * @inheritDoc
+     */
+    public function behaviors()
+    {
+        return array_merge(
+            parent::behaviors(),
+            [
+                'verbs' => [
+                    'class' => VerbFilter::class,
+                    'actions' => [
+                        'delete' => ['POST'],
+                    ],
+                ],
+            ]
+        );
+    }
+
+    /**
+     * Lists all Pelabuhan models.
+     *
+     * @return string
+     */
     public function actionIndex()
     {
-        $apiUrl = $_ENV['BMKG_PELABUHAN_META_URL'] ?? 'https://maritim.bmkg.go.id/marine2026-data/meta/pelabuhan.json';
-        
-        $pelabuhanList = [];
-        $errorMessage = null;
-
-        try {
-            $client = new Client([
-                'timeout' => 10,
-                'verify' => false
-            ]);
-            
-            $response = $client->request('GET', $apiUrl);
-            $data = json_decode($response->getBody()->getContents(), true);
-
-            if (is_array($data)) {
-                $items = isset($data['features']) ? $data['features'] : (isset($data['data']) ? $data['data'] : $data);
-
-                foreach ($items as $item) {
-                    $props = $item['properties'] ?? $item;
-
-                    $pelabuhanList[] = [
-                        'code' => $props['code'] ?? $props['id'] ?? $props['pelabuhan_id'] ?? '-',
-                        'name' => $props['name'] ?? $props['nama'] ?? $props['pelabuhan_nama'] ?? '-',
-                        'province' => $props['province'] ?? $props['provinsi'] ?? $props['provinsi'] ?? '-'
-                    ];
-                }
-            }
-        } catch (\Exception $e) {
-            $errorMessage = "Gagal mengambil data dari BMKG: " . $e->getMessage();
-        }
-
-        // Ambil query parameter
-        $searchCode = trim(Yii::$app->request->get('search_code', ''));
-        $searchName = trim(Yii::$app->request->get('search_name', ''));
-        $searchProvince = trim(Yii::$app->request->get('search_province', ''));
-
-        // Filter array data
-        if ($searchCode !== '' || $searchName !== '' || $searchProvince !== '') {
-            $pelabuhanList = array_filter($pelabuhanList, function ($item) use ($searchCode, $searchName, $searchProvince) {
-                $matchCode = ($searchCode === '') || (stripos($item['code'], $searchCode) !== false);
-                $matchName = ($searchName === '') || (stripos($item['name'], $searchName) !== false);
-                $matchProvince = ($searchProvince === '') || (stripos($item['province'], $searchProvince) !== false);
-
-                return $matchCode && $matchName && $matchProvince;
-            });
-        }
-
-        $dataProvider = new ArrayDataProvider([
-            'allModels' => array_values($pelabuhanList),
-            'pagination' => [
-                'pageSize' => 20,
-            ],
-            'sort' => [
-                'attributes' => ['code', 'name', 'perairan'],
-            ],
-        ]);
+        $searchModel = new PelabuhanSearch();
+        $dataProvider = $searchModel->search($this->request->queryParams);
 
         return $this->render('index', [
+            'searchModel' => $searchModel,
             'dataProvider' => $dataProvider,
-            'errorMessage' => $errorMessage,
-            'searchParams' => [
-                'search_code' => $searchCode,
-                'search_name' => $searchName,
-                'search_province' => $searchProvince,
-            ],
         ]);
+    }
+
+    /**
+     * Displays a single Pelabuhan model.
+     * @param int $id ID
+     * @return string
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    public function actionView($id)
+    {
+        return $this->render('view', [
+            'model' => $this->findModel($id),
+        ]);
+    }
+
+    /**
+     * Creates a new Pelabuhan model.
+     * If creation is successful, the browser will be redirected to the 'view' page.
+     * @return string|\yii\web\Response
+     */
+    public function actionCreate()
+    {
+        $model = new Pelabuhan();
+
+        if ($this->request->isPost) {
+            if ($model->load($this->request->post()) && $model->save()) {
+                return $this->redirect(['view', 'id' => $model->id]);
+            }
+        } else {
+            $model->loadDefaultValues();
+        }
+
+        return $this->render('create', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Updates an existing Pelabuhan model.
+     * If update is successful, the browser will be redirected to the 'view' page.
+     * @param int $id ID
+     * @return string|\yii\web\Response
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    public function actionUpdate($id)
+    {
+        $model = $this->findModel($id);
+
+        if ($this->request->isPost && $model->load($this->request->post()) && $model->save()) {
+            return $this->redirect(['view', 'id' => $model->id]);
+        }
+
+        return $this->render('update', [
+            'model' => $model,
+        ]);
+    }
+
+    /**
+     * Deletes an existing Pelabuhan model.
+     * If deletion is successful, the browser will be redirected to the 'index' page.
+     * @param int $id ID
+     * @return \yii\web\Response
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    public function actionDelete($id)
+    {
+        $this->findModel($id)->delete();
+
+        return $this->redirect(['index']);
+    }
+
+    /**
+     * Finds the Pelabuhan model based on its primary key value.
+     * If the model is not found, a 404 HTTP exception will be thrown.
+     * @param int $id ID
+     * @return Pelabuhan the loaded model
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    protected function findModel($id)
+    {
+        if (($model = Pelabuhan::findOne(['id' => $id])) !== null) {
+            return $model;
+        }
+
+        throw new NotFoundHttpException('The requested page does not exist.');
     }
 }
