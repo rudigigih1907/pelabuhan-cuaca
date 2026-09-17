@@ -1,0 +1,55 @@
+<?php
+
+use yii\helpers\Html;
+use yii\widgets\DetailView;
+
+/** @var yii\web\View $this */
+/** @var app\models\Cuaca $model */
+
+$this->title = $model->id;
+$this->params['breadcrumbs'][] = ['label' => 'Cuaca', 'url' => ['index']];
+$this->params['breadcrumbs'][] = $this->title;
+\yii\web\YiiAsset::register($this);
+?>
+<div class="cuaca-view">
+
+    <h1><?= Html::encode($this->title) ?></h1>
+
+    <p>
+        <?= Html::a('Update', ['update', 'id' => $model->id], ['class' => 'btn btn-primary']) ?>
+        <?= Html::a('Delete', ['delete', 'id' => $model->id], [
+            'class' => 'btn btn-danger',
+            'data' => [
+                'confirm' => 'Are you sure you want to delete this item?',
+                'method' => 'post',
+            ],
+        ]) ?>
+    </p>
+
+    <?= DetailView::widget([
+        'model' => $model,
+        'attributes' => [
+            'id',
+            'code_pelabuhan',
+            'issued',
+            'valid_from',
+            'valid_to',
+            'time',
+            'weather',
+            'visibility',
+            'temp_avg',
+            'rh_avg',
+            'wind_from',
+            'wind_speed',
+            'wind_gust',
+            'wave_cat',
+            'wave_height',
+            'current_to',
+            'current_speed',
+            'tides',
+            'created_at',
+            'updated_at',
+        ],
+    ]) ?>
+
+</div>
